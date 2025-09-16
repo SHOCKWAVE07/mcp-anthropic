@@ -1,9 +1,9 @@
 from typing import List, Tuple
 from mcp.types import Prompt, PromptMessage
-from anthropic.types import MessageParam
+import google.genai as genai
 
 from core.chat import Chat
-from core.claude import Claude
+from core.gemini import Gemini
 from mcp_client import MCPClient
 
 
@@ -12,9 +12,9 @@ class CliChat(Chat):
         self,
         doc_client: MCPClient,
         clients: dict[str, MCPClient],
-        claude_service: Claude,
+        gemini_service: Gemini,
     ):
-        super().__init__(clients=clients, claude_service=claude_service)
+        super().__init__(clients=clients, gemini_service=gemini_service)
 
         self.doc_client: MCPClient = doc_client
 
@@ -91,8 +91,8 @@ class CliChat(Chat):
 
 def convert_prompt_message_to_message_param(
     prompt_message: "PromptMessage",
-) -> MessageParam:
-    role = "user" if prompt_message.role == "user" else "assistant"
+) -> genai.types.Part:
+    role = "user" if prompt_message.role == "user" else "model"
 
     content = prompt_message.content
 
@@ -109,7 +109,7 @@ def convert_prompt_message_to_message_param(
                 if isinstance(content, dict)
                 else getattr(content, "text", "")
             )
-            return {"role": role, "content": content_text}
+            return {"role": role, "parts": content_text}
 
     if isinstance(content, list):
         text_blocks = []
@@ -127,17 +127,17 @@ def convert_prompt_message_to_message_param(
                         if isinstance(item, dict)
                         else getattr(item, "text", "")
                     )
-                    text_blocks.append({"type": "text", "text": item_text})
+                    text_blocks.append({"text": item_text})
 
         if text_blocks:
-            return {"role": role, "content": text_blocks}
+            return {"role": role, "parts": text_blocks}
 
-    return {"role": role, "content": ""}
+    return {"role": role, "parts": ""}
 
 
 def convert_prompt_messages_to_message_params(
     prompt_messages: List[PromptMessage],
-) -> List[MessageParam]:
+) -> List[genai.types.Part]:
     return [
         convert_prompt_message_to_message_param(msg) for msg in prompt_messages
     ]

@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "anthropic>=0.51.0",
+    "google-genai",
     "mcp[cli]>=1.8.0",
     "prompt-toolkit>=3.0.51",
     "python-dotenv>=1.1.0",
