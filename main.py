@@ -3,7 +3,7 @@ import sys
 import os
 from dotenv import load_dotenv
 from contextlib import AsyncExitStack
-import google.genai as genai
+import google.generativeai as genai
 
 from mcp_client import MCPClient
 from core.gemini import Gemini
@@ -20,9 +20,12 @@ gemini_api_key = os.getenv("GEMINI_API_KEY", "")
 assert gemini_model, "Error: GEMINI_MODEL cannot be empty. Update .env"
 assert gemini_api_key, "Error: GEMINI_API_KEY cannot be empty. Update .env"
 
+# Configure the API key here, before creating the Gemini service object.
+genai.configure(api_key=gemini_api_key)
+
 async def main():
     # Pass the API key to the Gemini service
-    gemini_service = Gemini(model=gemini_model, api_key=gemini_api_key)
+    gemini_service = Gemini(model=gemini_model)
 
     server_scripts = sys.argv[1:]
     clients = {}
