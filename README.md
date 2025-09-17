@@ -33,7 +33,7 @@ pip install uv
 
 ```bash
 uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+.venv\Scripts\activate  # On Mac: source .venv/Scripts/activate
 ```
 
 3. Install dependencies:
