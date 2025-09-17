@@ -1,5 +1,4 @@
 from mcp.server.fastmcp import FastMCP
-from pydantic import Field
 
 mcp = FastMCP("DocumentMCP", log_level="ERROR")
 
@@ -13,40 +12,84 @@ docs = {
     "spec.txt": "These specifications define the technical requirements for the equipment.",
 }
 
-
-
-@mcp.tool(
-    name = "read_doc_contents",
-    description = "Reads the contents of a document given its ID and return it as a string. The document ID is the filename of the document.",
-)
-
-def read_document(
-    doc_id: str = Field(description="The ID of the document to read.")
-):
-    if doc_id not in docs:
-        raise ValueError(f"Document with ID '{doc_id}' not found.")
-    return docs[doc_id]
-
-
-@mcp.tool(
-    name = "edit_doc_contents",
-    description = "Edits the contents of a document given its ID and new content. Returns the updated content of the document.",
-)
-def edit_document(
-    doc_id: str = Field(description="The ID of the document to edit."),
-    old_content: str = Field(description="The old content of the document."),
-    new_content: str = Field(description="The new content to write to the document.")
-):
-    if doc_id not in docs:
-        raise ValueError(f"Document with ID '{doc_id}' not found.")
-
-    docs[doc_id] = docs[doc_id].replace(old_content, new_content)
-    return docs[doc_id]
-
+# TODO: Write a tool to read a doc
+# TODO: Write a tool to edit a doc
 # TODO: Write a resource to return all doc id's
 # TODO: Write a resource to return the contents of a particular doc
 # TODO: Write a prompt to rewrite a doc in markdown format
 # TODO: Write a prompt to summarize a doc
+
+
+from pydantic import Field
+from mcp.server.fastmcp.prompts import base
+
+
+@mcp.tool(
+    name="read_doc_contents",
+    description="Read the contents of a document and return it as a string.",
+)
+def read_document(
+    doc_id: str = Field(description="Id of the document to read"),
+):
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+
+    return docs[doc_id]
+
+
+@mcp.tool(
+    name="edit_document",
+    description="Edit a document by replacing a string in the documents content with a new string",
+)
+def edit_document(
+    doc_id: str = Field(description="Id of the document that will be edited"),
+    old_str: str = Field(
+        description="The text to replace. Must match exactly, including whitespace"
+    ),
+    new_str: str = Field(
+        description="The new text to insert in place of the old text"
+    ),
+):
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+
+    docs[doc_id] = docs[doc_id].replace(old_str, new_str)
+
+
+@mcp.resource("docs://documents", mime_type="application/json")
+def list_docs() -> list[str]:
+    return list(docs.keys())
+
+
+@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")
+def fetch_doc(doc_id: str) -> str:
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+
+
+@mcp.prompt(
+    name="format",
+    description="Rewrites the contents of the document in Markdown format."
+)
+def format_document(doc_id: str):
+    if doc_id not in docs:
+        raise ValueError(f"Document {doc_id} not found.")
+    
+    content = docs[doc_id]
+    return [base.UserMessage(f"# Document: {doc_id}\n\n{content}\n")]
+
+@mcp.prompt(
+    name="summarize",
+    description="Summarizes the contents of the document."
+)
+def summarize_document(doc_id: str):
+    if doc_id not in docs:
+        raise ValueError(f"Document {doc_id} not found.")
+    
+    content = docs[doc_id]
+    return [base.UserMessage(f"Summarize the following document:\n\n{content}\n")]
+
 
 
 if __name__ == "__main__":

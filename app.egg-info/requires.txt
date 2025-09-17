@@ -1,4 +1,5 @@
 google-genai
+google-generativeai
 mcp[cli]>=1.8.0
 prompt-toolkit>=3.0.51
 python-dotenv>=1.1.0

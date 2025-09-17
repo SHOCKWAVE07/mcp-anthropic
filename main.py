@@ -3,29 +3,28 @@ import sys
 import os
 from dotenv import load_dotenv
 from contextlib import AsyncExitStack
-import google.generativeai as genai
 
 from mcp_client import MCPClient
-from core.gemini import Gemini
+from core.claude import Claude
 
 from core.cli_chat import CliChat
 from core.cli import CliApp
 
 load_dotenv()
 
-# Gemini Config
-gemini_model = os.getenv("GEMINI_MODEL", "")
-gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+# Anthropic Config
+claude_model = os.getenv("CLAUDE_MODEL", "")
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
-assert gemini_model, "Error: GEMINI_MODEL cannot be empty. Update .env"
-assert gemini_api_key, "Error: GEMINI_API_KEY cannot be empty. Update .env"
 
-# Configure the API key here, before creating the Gemini service object.
-genai.configure(api_key=gemini_api_key)
+assert claude_model, "Error: CLAUDE_MODEL cannot be empty. Update .env"
+assert anthropic_api_key, (
+    "Error: ANTHROPIC_API_KEY cannot be empty. Update .env"
+)
+
 
 async def main():
-    # Pass the API key to the Gemini service
-    gemini_service = Gemini(model=gemini_model)
+    claude_service = Claude(model=claude_model)
 
     server_scripts = sys.argv[1:]
     clients = {}
@@ -52,7 +51,7 @@ async def main():
         chat = CliChat(
             doc_client=doc_client,
             clients=clients,
-            gemini_service=gemini_service,
+            claude_service=claude_service,
         )
 
         cli = CliApp(chat)

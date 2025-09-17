@@ -1,9 +1,9 @@
 from typing import List, Tuple
 from mcp.types import Prompt, PromptMessage
-import google.genai as genai
+from anthropic.types import MessageParam
 
 from core.chat import Chat
-from core.gemini import Gemini
+from core.claude import Claude
 from mcp_client import MCPClient
 
 
@@ -12,9 +12,9 @@ class CliChat(Chat):
         self,
         doc_client: MCPClient,
         clients: dict[str, MCPClient],
-        gemini_service: Gemini,
+        claude_service: Claude,
     ):
-        super().__init__(clients=clients, gemini_service=gemini_service)
+        super().__init__(clients=clients, claude_service=claude_service)
 
         self.doc_client: MCPClient = doc_client
 
@@ -69,18 +69,30 @@ class CliChat(Chat):
         added_resources = await self._extract_resources(query)
 
         prompt = f"""
+        The user has a question:
+        <query>
         {query}
+        </query>
 
+        The following context may be useful in answering their question:
+        <context>
         {added_resources}
+        </context>
+
+        Note the user's query might contain references to documents like "@report.docx". The "@" is only
+        included as a way of mentioning the doc. The actual name of the document would be "report.docx".
+        If the document content is included in this prompt, you don't need to use an additional tool to read the document.
+        Answer the user's question directly and concisely. Start with the exact information they need. 
+        Don't refer to or mention the provided context in any way - just use it to inform your answer.
         """
 
-        self.messages.append({"role": "user", "parts": [prompt]})
+        self.messages.append({"role": "user", "content": prompt})
 
 
 def convert_prompt_message_to_message_param(
     prompt_message: "PromptMessage",
-) -> genai.types.Part:
-    role = "user" if prompt_message.role == "user" else "model"
+) -> MessageParam:
+    role = "user" if prompt_message.role == "user" else "assistant"
 
     content = prompt_message.content
 
@@ -97,7 +109,7 @@ def convert_prompt_message_to_message_param(
                 if isinstance(content, dict)
                 else getattr(content, "text", "")
             )
-            return {"role": role, "parts": content_text}
+            return {"role": role, "content": content_text}
 
     if isinstance(content, list):
         text_blocks = []
@@ -115,17 +127,17 @@ def convert_prompt_message_to_message_param(
                         if isinstance(item, dict)
                         else getattr(item, "text", "")
                     )
-                    text_blocks.append({"text": item_text})
+                    text_blocks.append({"type": "text", "text": item_text})
 
         if text_blocks:
-            return {"role": role, "parts": text_blocks}
+            return {"role": role, "content": text_blocks}
 
-    return {"role": role, "parts": ""}
+    return {"role": role, "content": ""}
 
 
 def convert_prompt_messages_to_message_params(
     prompt_messages: List[PromptMessage],
-) -> List[genai.types.Part]:
+) -> List[MessageParam]:
     return [
         convert_prompt_message_to_message_param(msg) for msg in prompt_messages
     ]

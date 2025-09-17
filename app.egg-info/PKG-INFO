@@ -5,6 +5,7 @@ Summary: Add your description here
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 Requires-Dist: google-genai
+Requires-Dist: google-generativeai
 Requires-Dist: mcp[cli]>=1.8.0
 Requires-Dist: prompt-toolkit>=3.0.51
 Requires-Dist: python-dotenv>=1.1.0
